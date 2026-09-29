@@ -32,8 +32,6 @@ jobs:
         run: pnpm i --frozen-lockfile
 
       - name: Prebuild
-        env:
-          DWELLIR_KEY: "random-dwellir-key-for-testing"
         run: pnpm run prebuild
 
       - name: Run Vitest tests

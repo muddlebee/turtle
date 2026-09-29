@@ -118,7 +118,6 @@ async function getBalance(chain: Chain, token: Token, address: string): Promise<
       address,
       chain: node as TSubstrateChain,
       currency,
-      api: chain.rpcConnection,
     })) ?? 0n
 
   return {

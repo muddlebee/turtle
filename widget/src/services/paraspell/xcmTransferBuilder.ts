@@ -36,7 +36,6 @@ class XcmTransferBuilderManager {
 
   createBuilder(params: TransferParams): TxBuilder {
     const { sourceChain, destinationChain, sourceToken, sourceAmount, recipient, sender } = params
-    const wssEndpoint = sourceChain.rpcConnection
     const sourceChainNode = getParaSpellChain(sourceChain)
     const destinationChainNode = getParaSpellChain(destinationChain)
 
@@ -53,7 +52,6 @@ class XcmTransferBuilderManager {
     try {
       const senderAddress = sender.address
       builder = Builder({
-        apiOverrides: { [sourceChainNode]: wssEndpoint },
         abstractDecimals: false,
       })
         .from(sourceChainNode as TSubstrateChain)
@@ -198,7 +196,6 @@ class XcmTransferBuilderManager {
 
 function txKey(params: TransferParams): string {
   const { sourceChain, destinationChain, sourceToken, sourceAmount, recipient, sender } = params
-  const wssEndpoint = sourceChain.rpcConnection
   const amount = toHuman(sourceAmount, sourceToken) // Convert large numeric amount to human-readable format to prevent long key strings
   const senderAddress = sender.address
   return [
@@ -208,7 +205,6 @@ function txKey(params: TransferParams): string {
     amount, // Source amount
     recipient,
     senderAddress,
-    ...(wssEndpoint ? [encodeURIComponent(wssEndpoint)] : []), // Encode URL to avoid delimiter conflicts
   ].join('|')
 }
 

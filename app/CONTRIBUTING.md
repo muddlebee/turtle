@@ -26,7 +26,7 @@ _Parachain prerequisites coming soon._
 
 **1. 📖 Update registry:** (_To support the new chain and tokens on the application_)
 
-- add chain or update existing chain with all the fields required by the chain type: find a reliable source for the logo, check the supported address type (evm, or substrate), destinationFeeDOT, rpcConnection, skipExistentialDepositCheck, maxConsumers, etc.
+- add chain or update an existing chain with all fields required by the chain type: find a reliable source for the logo, check the supported address type (EVM or Substrate), destination fee, execute support, etc.
   => Some missing information can be found on [Snowbridge SDK](https://github.com/Snowfork/snowbridge/blob/main/web/packages/api/src/environment.ts).
 
 - add token if needed: again, find the logo from a reliable source, data (token address or an empty string if not available, multilocation, etc)
@@ -43,15 +43,15 @@ _Parachain prerequisites coming soon._
 ✋ Be careful to schemas when updating any type models. (It must not happen often).<br/>
 => Check chain swap on the app, sourcechain/destchain filters, sourcechain/tokens filters (UI checks in the transfer form).
 
-**2. 🔐 Variables:** Do not forget to update `SNOWBRIDGE_MAINNET_PARACHAIN_URLS` in our registry so snowbridge can connect to the rpc. **& Vercel**. ✋ Be aware that adding a duplicate parachain Id to _PARACHAIN_API_URLS_ might break production. Test locally by setting the environment to `testnet`.
+Confirm that the selected transfer SDK supports the chain. Provider SDKs (ParaSpell, Snowbridge, and Chainflip) own their default connection configuration; do not add RPC endpoints to the Turtle registry.
 
-**3. ⚙️ Update Polkadot API/PAPI configuration:** (To fetch the balances)
+**2. ⚙️ Update Polkadot API/PAPI configuration:** (To fetch the balances)
 
 - codegen metadata: add the chain with `npx papi add chainName -w wss://example-endpoint…`
 - run `pnpm i` again
 - import chainName in the code. Update `src/utils/papi.ts` to support the new type.
 
-**4. ⛓️ Test Mainnet routes before merging to main branch. -** Either locally or from a deployed version: (Test flows && **Tracking**)
+**3. ⛓️ Test Mainnet routes before merging to main branch. -** Either locally or from a deployed version: (Test flows && **Tracking**)
 
 - Wait for transfers to be completed, look for Explorer(s) (Etherscan or Subscan) - Transfer must be displayed in the completed transfer tab.
 

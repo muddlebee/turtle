@@ -1,16 +1,11 @@
 import { Context, contextConfigFor, environment, toEthereumV2, toPolkadotV2 } from '@snowbridge/api'
 import {
-  AssetHub,
-  BridgeHub,
   type Chain,
   EthereumTokens,
   getTokenPrice,
   isAssetHub,
   type Network,
-  Polkadot,
   PolkadotTokens,
-  rpcConnectionAsHttps,
-  SNOWBRIDGE_MAINNET_PARACHAIN_URLS,
   type Token,
 } from '@velocitylabs-org/turtle-registry'
 import type { SnowbridgeContext } from '@/models/snowbridge'
@@ -33,19 +28,7 @@ export function getSbEnvironment(network: Network): environment.SnowbridgeEnviro
   const sbNetwork = toSnowbridgeNetwork(network)
   if (sbNetwork === undefined) throw Error(`Snowbridge doesn't support the given Network`)
 
-  const env = environment.SNOWBRIDGE_ENV[sbNetwork]
-
-  // Apply custom api endpoints for each supported network
-  if (network === 'Polkadot') {
-    env.config.ASSET_HUB_PARAID = AssetHub.chainId
-    env.config.BRIDGE_HUB_PARAID = BridgeHub.chainId
-    env.config.RELAY_CHAIN_URL = rpcConnectionAsHttps(Polkadot.rpcConnection)
-    env.config.PARACHAINS = SNOWBRIDGE_MAINNET_PARACHAIN_URLS
-  } else {
-    throw Error(`Snowbridge doesn't support the given Network`)
-  }
-
-  return env
+  return environment.SNOWBRIDGE_ENV[sbNetwork]
 }
 
 export async function getSnowBridgeContext(network: Network = 'Polkadot'): Promise<Context> {

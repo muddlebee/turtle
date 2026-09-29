@@ -15,6 +15,3 @@ packages/**/dist
 packages/**/tsconfig.tsbuildinfo
 packages/**/.env
 !packages/**/.env.example
-packages/registry/src/generated-env.ts
-
-

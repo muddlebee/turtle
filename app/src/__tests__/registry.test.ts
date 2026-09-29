@@ -59,15 +59,6 @@ describe('Chains', () => {
     const chainIds = new Set(MainnetRegistry.chains.map(c => c.uid))
     expect(chainIds.size).toBe(MainnetRegistry.chains.length)
   })
-
-  it('should not expose unresolved RPC configuration', () => {
-    MainnetRegistry.chains.forEach(chain => {
-      if (chain.rpcConnection) {
-        expect(chain.rpcConnection).toMatch(/^wss:\/\//)
-        expect(chain.rpcConnection).not.toContain('%%')
-      }
-    })
-  })
 })
 
 describe('Tokens', () => {

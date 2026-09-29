@@ -8,9 +8,8 @@
   "type": "module",
   "author": "Stefano Imparato <stefano@velocitylabs.org>",
   "scripts": {
-    "prebuild": "node script/generateEnv.cjs",
-    "build": "pnpm run prebuild && tsc -b && tsc-alias",
-    "watch": "pnpm run prebuild && tsc --watch & tsc-alias -w"
+    "build": "tsc -b && tsc-alias",
+    "watch": "tsc --watch & tsc-alias -w"
   },
   "exports": {
     ".": {
@@ -23,7 +22,6 @@
   },
   "devDependencies": {
     "@velocitylabs-org/turtle-typescript-config": "workspace:*",
-    "dotenv": "^16.4.5",
     "tsc-alias": "^1.8.16"
   },
   "peerDependencies": {

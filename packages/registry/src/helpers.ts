@@ -1,10 +1,5 @@
 import type { Chain, Origin, TokenStandard } from './types'
 
-export function rpcConnectionAsHttps(rpc?: string): string {
-  if (!rpc) return ''
-  return rpc.replace('wss://', 'https://')
-}
-
 export function isAssetHub(chain: Chain): boolean {
   return chain.network === 'Polkadot' && chain.chainId === 1000
 }
