@@ -41,7 +41,12 @@ class XcmRouterBuilderManager {
     const destinationChainFromId = getParaSpellChain(destinationChain)
 
     if (!sourceChainFromId || !destinationChainFromId) throw new Error('Transfer failed: chain id not found.')
-    if (sourceChainFromId === 'Ethereum' || destinationChainFromId === 'Ethereum')
+    if (
+      sourceChainFromId === 'Ethereum' ||
+      sourceChainFromId === 'EthereumTestnet' ||
+      destinationChainFromId === 'Ethereum' ||
+      destinationChainFromId === 'EthereumTestnet'
+    )
       throw new Error('Transfer failed: Ethereum is not supported.')
 
     const currencyIdFrom = getParaspellToken(sourceToken, sourceChainFromId)

@@ -20,7 +20,10 @@ import {
 } from '@velocitylabs-org/turtle-registry'
 import { removeWhitespace } from '@/utils/strings'
 
-export type DryRunResult = { type: 'Supported' | 'Unsupported' } & TDryRunResult
+export type DryRunResult = { type: 'Supported' | 'Unsupported' } & (
+  | TDryRunResult
+  | { origin: { success: false; failureReason: string }; destination?: undefined; hops: [] }
+)
 
 const getTokenSymbol = (sourceChain: TChain, token: Token) => {
   const supportedAssets = getAllAssetsSymbols(sourceChain)

@@ -6,8 +6,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "test": "jest --transformIgnorePatterns \"node_modules/(?!@toolz/allow)/\"",
-    "test:watch": "jest --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepare": "husky"
   },
   "dependencies": {
@@ -15,8 +15,8 @@
     "@hookform/resolvers": "3.9.0",
     "@jest/globals": "^29.7.0",
     "@number-flow/react": "^0.4.1",
-    "@paraspell/sdk": "11.14.8",
-    "@paraspell/xcm-router": "11.14.8",
+    "@paraspell/sdk": "12.8.3",
+    "@paraspell/xcm-router": "12.8.3",
     "@polkadot/api": "^15.9.2",
     "@polkadot/api-base": "^15.9.2",
     "@polkadot/apps-config": "^0.145.1",
@@ -51,7 +51,7 @@
     "import-in-the-middle": "^1.13.1",
     "lucide-react": "^0.446.0",
     "next": "15.5.9",
-    "polkadot-api": "^1.20.1",
+    "polkadot-api": "1.23.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "7.53.0",
@@ -59,7 +59,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "tailwindcss-motion": "0.4.3-beta",
-    "viem": "^2.36.0",
+    "viem": "2.40.3",
     "wagmi": "^2.13.3",
     "zod": "3.23.8",
     "zustand": "^4.5.5"
@@ -84,6 +84,7 @@
     "tailwindcss": "^3.4.14",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "3.2.4"
   }
 }

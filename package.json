@@ -32,7 +32,19 @@
   },
   "packageManager": "pnpm@9.15.3",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19"
+  },
+  "pnpm": {
+    "packageExtensions": {
+      "@paraspell/sdk@12.8.3": {
+        "dependencies": {
+          "@noble/curves": "2.0.1"
+        }
+      }
+    },
+    "patchedDependencies": {
+      "@scure/sr25519@0.2.0": "patches/@scure__sr25519@0.2.0.patch"
+    }
   },
   "dependencies": {
     "@changesets/cli": "^2.29.8"

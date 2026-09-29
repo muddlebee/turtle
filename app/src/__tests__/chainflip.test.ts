@@ -1,4 +1,3 @@
-import { describe, expect, it } from '@jest/globals'
 import {
   Arbitrum,
   AssetHub,
@@ -10,6 +9,7 @@ import {
   sharedArbitrumTokenBase,
   sharedEthTokenBase,
 } from '@velocitylabs-org/turtle-registry'
+import { describe, expect, it } from 'vitest'
 import { type ChainflipChain, chainflipToRegistryChain } from '@/utils/chainflip'
 
 const ChainflipChains: ChainflipChain[] = ['Ethereum', 'Polkadot', 'Assethub', 'Arbitrum']

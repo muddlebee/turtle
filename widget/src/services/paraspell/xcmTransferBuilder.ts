@@ -1,6 +1,7 @@
 import {
   Builder,
   type GeneralBuilder,
+  type TPapiTransaction,
   type TSendBaseOptionsWithSenderAddress,
   type TSubstrateChain,
 } from '@paraspell/sdk'
@@ -11,6 +12,7 @@ import { toHuman } from '@/utils/transfer'
 const velocityRecoveryAccount = '148FYcbxxTnhTCgiTgyVod5LygZZRQiGn2bQA2YqaaZbb9WJ'
 
 type TxBuilder = ReturnType<typeof Builder>
+type ConfiguredBuilder = GeneralBuilder<TSendBaseOptionsWithSenderAddress<TPapiTransaction>>
 
 type TransferParamsBase = Pick<
   TransferParams,
@@ -80,7 +82,7 @@ class XcmTransferBuilderManager {
 
   async createTransferTx(params: TransferParams) {
     try {
-      const builder = this.getBuilder(params as TransferParams) as GeneralBuilder<TSendBaseOptionsWithSenderAddress>
+      const builder = this.getBuilder(params as TransferParams) as ConfiguredBuilder
       const senderAddress = params.sender.address
       builder.senderAddress(senderAddress)
       return await builder.build()
@@ -93,7 +95,7 @@ class XcmTransferBuilderManager {
   async isExistentialDepositMetAfterTransfer(params: TransferParams) {
     try {
       const builder = this.getBuilder(params)
-      return await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).verifyEdOnDestination()
+      return await (builder as ConfiguredBuilder).verifyEdOnDestination()
     } catch (error) {
       console.error('Failed to verify existential deposit: ', error)
       return false
@@ -103,7 +105,7 @@ class XcmTransferBuilderManager {
   async dryRun(params: TransferParams) {
     try {
       const builder = this.getBuilder(params)
-      return await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).dryRun()
+      return await (builder as ConfiguredBuilder).dryRun()
     } catch (error) {
       console.error('Failed to dry run: ', error)
       throw error
@@ -114,7 +116,7 @@ class XcmTransferBuilderManager {
   async getXcmFee(params: TransferParamsBase) {
     try {
       const builder = this.getBuilder(params as TransferParams)
-      return await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).getXcmFee()
+      return await (builder as ConfiguredBuilder).getXcmFee()
     } catch (error) {
       console.error('Failed to get xcm fees: ', error)
       throw error
@@ -124,7 +126,7 @@ class XcmTransferBuilderManager {
   async getOriginXcmFee(params: TransferParamsBase) {
     try {
       const builder = this.getBuilder(params as TransferParams)
-      return await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).getOriginXcmFee()
+      return await (builder as ConfiguredBuilder).getOriginXcmFee()
     } catch (error) {
       console.error('Failed to get origin xcm fees: ', error)
       throw error
@@ -135,7 +137,7 @@ class XcmTransferBuilderManager {
   async getTransferableAmount(params: TransferParamsBase) {
     try {
       const builder = this.getBuilder(params as TransferParams)
-      return await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).getTransferableAmount()
+      return await (builder as ConfiguredBuilder).getTransferableAmount()
     } catch (error) {
       console.error('Failed to get max transferable amount: ', error)
       return null
@@ -145,7 +147,7 @@ class XcmTransferBuilderManager {
   async getMinTransferableAmount(params: TransferParamsBase) {
     try {
       const builder = this.getBuilder(params as TransferParams)
-      return await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).getMinTransferableAmount()
+      return await (builder as ConfiguredBuilder).getMinTransferableAmount()
     } catch (error) {
       console.error('Failed to get min transferable amount: ', error)
       return null
@@ -155,7 +157,7 @@ class XcmTransferBuilderManager {
   async getReceivableAmount(params: TransferParamsBase) {
     try {
       const builder = this.getBuilder(params as TransferParams)
-      return await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).getReceivableAmount()
+      return await (builder as ConfiguredBuilder).getReceivableAmount()
     } catch (error) {
       console.error('Failed to get transfer fees info: ', error)
       return null
@@ -165,7 +167,7 @@ class XcmTransferBuilderManager {
   async getTransferInfo(params: TransferParamsBase) {
     try {
       const builder = this.getBuilder(params as TransferParams)
-      return await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).getTransferInfo()
+      return await (builder as ConfiguredBuilder).getTransferInfo()
     } catch (error) {
       console.error('Failed to get transfer fees info: ', error)
       return null
@@ -175,7 +177,7 @@ class XcmTransferBuilderManager {
   async disconnect(params: TransferParams) {
     try {
       const builder = this.getBuilder(params)
-      await (builder as GeneralBuilder<TSendBaseOptionsWithSenderAddress>).disconnect()
+      await (builder as ConfiguredBuilder).disconnect()
       this.removeBuilder(params)
       return true
     } catch (error) {

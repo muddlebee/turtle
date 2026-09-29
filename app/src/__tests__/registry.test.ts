@@ -1,5 +1,5 @@
-import { describe, expect, it } from '@jest/globals'
 import { MainnetRegistry, routes } from '@velocitylabs-org/turtle-registry'
+import { describe, expect, it } from 'vitest'
 
 describe('Routes', () => {
   it('should have correctly structured routes', () => {
