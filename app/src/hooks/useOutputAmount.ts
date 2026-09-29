@@ -37,6 +37,7 @@ export function useOutputAmount({
   fees,
   loadingFees,
 }: UseOutputAmountParams): OutputAmountResult {
+  const isSwap = !!sourceToken && !!destinationToken && !isSameToken(sourceToken, destinationToken)
   // The following react-query is used to fetch the output amount for:
   // A swap made from HydrationDex with Paraspell
   // A bridge or XCM transfer made from Snowbridge or Paraspell
@@ -48,6 +49,8 @@ export function useOutputAmount({
       sourceToken?.id,
       destinationToken?.id,
       sourceAmount?.toString(),
+      isSwap ? null : sender?.address,
+      isSwap ? null : recipientAddress,
       loadingFees,
     ],
     queryFn: async () => {
@@ -57,15 +60,13 @@ export function useOutputAmount({
         !sourceToken ||
         !destinationToken ||
         !sourceAmount ||
-        !sender ||
-        !recipientAddress ||
-        loadingFees
+        (!isSwap && (!sender || !recipientAddress || loadingFees))
       )
         return null
 
       try {
         // Paraspell swap from HydrationDex or AH
-        if (!isSameToken(sourceToken, destinationToken)) {
+        if (isSwap) {
           return await xcmRouterBuilderManager.getExchangeOutputAmount({
             sourceChain,
             destinationChain,
@@ -74,6 +75,8 @@ export function useOutputAmount({
             sourceAmount,
           })
         }
+
+        if (!sender || !recipientAddress) return null
 
         // Bridge & XCM transfers (Snowbridge & Paraspell)
         const receivableAmount = await xcmTransferBuilderManager.getReceivableAmount({
@@ -108,7 +111,7 @@ export function useOutputAmount({
       !!sourceToken &&
       !!destinationToken &&
       !!sourceAmount &&
-      !loadingFees &&
+      (isSwap || (!!sender && !!recipientAddress && !loadingFees)) &&
       !isChainflipSwap(sourceChain, destinationChain, sourceToken, destinationToken),
     staleTime: 10000, // Cache results for 10 seconds
     retry: 2, // Retry failed requests twice

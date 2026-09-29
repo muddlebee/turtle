@@ -66,6 +66,14 @@ const getSourceAmountPlaceholder = ({
   return formatAmount(Number(balanceData?.formatted), 'Longer')
 }
 
+const getRoundedDisplayAmount = (amount: number | null | undefined, decimals: number): number | null => {
+  if (amount == null) return null
+
+  const fractionDigits =
+    amount > 0 && amount < 0.01 ? Math.min(decimals, Math.ceil(-Math.log10(amount)) + 2) : Math.min(decimals, 3)
+  return Number(amount.toFixed(fractionDigits))
+}
+
 export default function Transfer() {
   const { snowbridgeContext } = useSnowbridgeContext()
   const {
@@ -385,7 +393,11 @@ export default function Transfer() {
                       priorityToken: sourceTokenAmount?.token,
                     }}
                     amountProps={{
-                      value: null, // the destination amount is shown in the TxSummary component
+                      // Keep the form's quote precise; round only the read-only display.
+                      value: getRoundedDisplayAmount(
+                        destinationTokenAmount?.amount,
+                        destinationTokenAmount?.token?.decimals ?? 3,
+                      ),
                       onChange: amount => tokenField.onChange({ token: tokenField.value?.token ?? null, amount }),
                       error: errors.destinationTokenAmount?.amount?.message,
                       placeholder: '',

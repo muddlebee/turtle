@@ -23,6 +23,7 @@ import { getRecipientAddress, isValidAddressType } from '@/utils/address'
 import { getChainflipAsset, getChainflipChain, isChainflipSwap, meetChainflipMinSwapAmount } from '@/utils/chainflip'
 import { isRouteAllowed, isTokenAvailableForSourceChain } from '@/utils/routes'
 import { formatAmount, safeConvertAmount, toHuman } from '@/utils/transfer'
+import { parseTransferSelection, writeTransferSelection } from '@/utils/transferUrl'
 import useFees from './useFees'
 import useNotification from './useNotification'
 
@@ -46,6 +47,7 @@ const useTransferForm = () => {
   const { transfer, transferStatus } = useTransfer()
   const { addNotification } = useNotification()
   const [transferableAmount, setTransferableAmount] = useState<bigint | null>(null)
+  const [urlSelectionReady, setUrlSelectionReady] = useState(false)
 
   const {
     control,
@@ -74,6 +76,34 @@ const useTransferForm = () => {
   const sourceAmount = useWatch({ control, name: 'sourceTokenAmount.amount' })
   const sourceToken = useWatch({ control, name: 'sourceTokenAmount.token' })
   const destToken = useWatch({ control, name: 'destinationTokenAmount.token' })
+
+  useEffect(() => {
+    const selection = parseTransferSelection(new URLSearchParams(window.location.search))
+    reset({
+      ...initValues,
+      sourceChain: selection.sourceChain,
+      sourceTokenAmount: { token: selection.sourceToken, amount: null },
+      destinationChain: selection.destinationChain,
+      destinationTokenAmount: { token: selection.destinationToken, amount: null },
+    })
+    setUrlSelectionReady(true)
+  }, [reset])
+
+  useEffect(() => {
+    if (!urlSelectionReady) return
+
+    const url = new URL(window.location.href)
+    const params = writeTransferSelection(url.searchParams, {
+      sourceChain,
+      sourceToken,
+      destinationChain,
+      destinationToken: destToken,
+    })
+    if (params.toString() === url.searchParams.toString()) return
+
+    url.search = params.toString()
+    window.history.replaceState(window.history.state, '', url)
+  }, [urlSelectionReady, sourceChain, sourceToken, destinationChain, destToken])
 
   const [sourceTokenAmountError, setSourceTokenAmountError] = useState<string>('') // validation on top of zod
   const [minSwapAmountError, setMinSwapAmountError] = useState<string>('') // validation on top of zod

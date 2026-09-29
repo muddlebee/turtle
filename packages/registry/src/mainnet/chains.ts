@@ -18,6 +18,7 @@ import polkadotLogo from '@velocitylabs-org/turtle-assets/logos/polkadot.svg'
 import type { Chain } from '@/types'
 import { DWELLIR_KEY } from '../constants'
 
+// Snowbridge also uses HTTPS versions of these WebSocket URLs, so endpoints must support both transports.
 export const Ethereum: Chain = {
   uid: 'ethereum',
   name: 'Ethereum',
@@ -46,7 +47,7 @@ export const Polkadot: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-polkadot.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://polkadot-rpc.publicnode.com',
 }
 
 export const AssetHub: Chain = {
@@ -57,7 +58,7 @@ export const AssetHub: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-asset-hub-polkadot.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://polkadot-asset-hub-rpc.polkadot.io',
   supportExecuteExtrinsic: true,
 }
 
@@ -69,7 +70,7 @@ export const BridgeHub: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-bridge-hub-polkadot.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://polkadot-bridge-hub-rpc.polkadot.io',
 }
 
 export const Bifrost: Chain = {
@@ -81,7 +82,7 @@ export const Bifrost: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-bifrost-polkadot.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://eu.bifrost-polkadot-rpc.liebi.com/ws',
 }
 
 export const Hydration: Chain = {
@@ -93,7 +94,7 @@ export const Hydration: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-hydration.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://rpc.hydradx.cloud',
   supportExecuteExtrinsic: true,
 }
 
@@ -105,7 +106,7 @@ export const Phala: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-phala.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: DWELLIR_KEY ? `wss://api-phala.dwellir.com/${DWELLIR_KEY}` : undefined,
 }
 
 export const Moonbeam: Chain = {
@@ -117,7 +118,7 @@ export const Moonbeam: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['evm'],
   walletType: 'EVM',
-  rpcConnection: `wss://api-moonbeam.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://moonbeam.api.onfinality.io/public-ws',
 }
 
 export const Interlay: Chain = {
@@ -129,7 +130,7 @@ export const Interlay: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-interlay.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://api.interlay.io/parachain',
 }
 
 export const Acala: Chain = {
@@ -141,7 +142,7 @@ export const Acala: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-acala.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://acala-rpc-0.aca-api.network',
 }
 
 export const Polimec: Chain = {
@@ -153,7 +154,7 @@ export const Polimec: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-polimec.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: DWELLIR_KEY ? `wss://api-polimec.n.dwellir.com/${DWELLIR_KEY}` : undefined,
 }
 
 export const Centrifuge: Chain = {
@@ -165,7 +166,7 @@ export const Centrifuge: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-centrifuge.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://centrifuge-parachain.api.onfinality.io/public-ws',
 }
 
 export const Astar: Chain = {
@@ -177,7 +178,7 @@ export const Astar: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-astar.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://rpc.astar.network',
 }
 
 export const Mythos: Chain = {
@@ -189,7 +190,7 @@ export const Mythos: Chain = {
   network: 'Polkadot',
   supportedAddressTypes: ['evm'],
   walletType: 'SubstrateEVM',
-  rpcConnection: 'wss://polkadot-mythos-rpc.polkadot.io',
+  rpcConnection: 'wss://mythos-rpc.dmarket.com/',
 }
 
 export const Kusama: Chain = {
@@ -200,7 +201,7 @@ export const Kusama: Chain = {
   network: 'Kusama',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://kusama-rpc.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://kusama-rpc.publicnode.com',
 }
 
 export const KusamaAssetHub: Chain = {
@@ -211,5 +212,5 @@ export const KusamaAssetHub: Chain = {
   network: 'Kusama',
   supportedAddressTypes: ['ss58'],
   walletType: 'Substrate',
-  rpcConnection: `wss://api-asset-hub-kusama.n.dwellir.com/${DWELLIR_KEY}`,
+  rpcConnection: 'wss://kusama-asset-hub-rpc.polkadot.io',
 }
