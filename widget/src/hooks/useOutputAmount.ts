@@ -8,6 +8,7 @@ import xcmRouterBuilderManager from '@/services/paraspell/xcmRouterBuilder'
 import xcmTransferBuilderManager from '@/services/paraspell/xcmTransferBuilder'
 import { isChainflipSwap } from '@/utils/chainflip'
 import { useChainflipQuote } from './useChainflipQuote'
+import { useDebouncedValue } from './useDebouncedValue'
 
 interface UseOutputAmountParams {
   sourceChain?: Chain | null
@@ -37,6 +38,8 @@ export function useOutputAmount({
   fees,
   loadingFees,
 }: UseOutputAmountParams): OutputAmountResult {
+  const debouncedSourceAmount = useDebouncedValue(sourceAmount)
+  const isDebouncing = sourceAmount !== debouncedSourceAmount
   // The following react-query is used to fetch the output amount for:
   // A swap made from HydrationDex with Paraspell
   // A bridge or XCM transfer made from Snowbridge or Paraspell
@@ -47,7 +50,7 @@ export function useOutputAmount({
       destinationChain?.uid,
       sourceToken?.id,
       destinationToken?.id,
-      sourceAmount?.toString(),
+      debouncedSourceAmount?.toString(),
       loadingFees,
     ],
     queryFn: async () => {
@@ -56,7 +59,7 @@ export function useOutputAmount({
         !destinationChain ||
         !sourceToken ||
         !destinationToken ||
-        !sourceAmount ||
+        !debouncedSourceAmount ||
         !sender ||
         !recipientAddress ||
         loadingFees
@@ -71,7 +74,7 @@ export function useOutputAmount({
             destinationChain,
             sourceToken,
             destinationToken,
-            sourceAmount,
+            sourceAmount: debouncedSourceAmount,
           })
         }
 
@@ -80,13 +83,13 @@ export function useOutputAmount({
           sourceChain,
           destinationChain,
           sourceToken,
-          sourceAmount,
+          sourceAmount: debouncedSourceAmount,
           sender,
           recipient: recipientAddress,
         })
         return receivableAmount
           ? receivableAmount
-          : getReceivableAmount({ fees, loadingFees, sourceToken, sourceAmount })
+          : getReceivableAmount({ fees, loadingFees, sourceToken, sourceAmount: debouncedSourceAmount })
       } catch (error) {
         captureException(error, {
           level: 'error',
@@ -95,7 +98,7 @@ export function useOutputAmount({
             destinationChain,
             sourceToken,
             destinationToken,
-            sourceAmount,
+            sourceAmount: debouncedSourceAmount,
           },
         })
         console.error('Failed to fetch swap output amount:', error)
@@ -107,7 +110,8 @@ export function useOutputAmount({
       !!destinationChain &&
       !!sourceToken &&
       !!destinationToken &&
-      !!sourceAmount &&
+      !!debouncedSourceAmount &&
+      !isDebouncing &&
       !loadingFees &&
       !isChainflipSwap(sourceChain, destinationChain, sourceToken, destinationToken),
     staleTime: 10000, // Cache results for 10 seconds
@@ -121,11 +125,12 @@ export function useOutputAmount({
     destinationChain,
     sourceToken,
     destinationToken,
-    amount: sourceAmount?.toString(),
+    amount: debouncedSourceAmount?.toString(),
   })
 
   const outputAmount = useMemo(() => {
-    if (!sourceChain || !destinationChain || !sourceToken || !destinationToken || !sourceAmount) return null
+    if (isDebouncing || !sourceChain || !destinationChain || !sourceToken || !destinationToken || !sourceAmount)
+      return null
 
     if (isChainflipSwap(sourceChain, destinationChain, sourceToken, destinationToken) && !isChainflipQuoteError) {
       return chainflipQuote ? BigInt(chainflipQuote.egressAmount) : null
@@ -141,11 +146,12 @@ export function useOutputAmount({
     chainflipQuote,
     isChainflipQuoteError,
     data,
+    isDebouncing,
   ])
 
   return {
     outputAmount,
-    isLoading: isLoading || isFetching || isLoadingChainflipQuote || !!loadingFees,
+    isLoading: isDebouncing || isLoading || isFetching || isLoadingChainflipQuote || !!loadingFees,
   }
 }
 
