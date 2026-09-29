@@ -19,6 +19,8 @@ export interface Chain {
   walletType: WalletType
   /** Optional parameter for parachains only. Used for xcm transfers. */
   destinationFeeDOT?: string
+  /** Optional RPC override for local development and testing. Provider SDK defaults are used when omitted. */
+  rpcConnection?: string
   /** Optional parameter for Polkadot chains only to signal if they support 'execute' function. Used to signal that this chain allows to Send Swap Send with 1 signature */
   supportExecuteExtrinsic?: boolean
 }

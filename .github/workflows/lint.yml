@@ -33,3 +33,9 @@ jobs:
 
       - name: Running lint and format check
         run: pnpm run format-and-lint
+
+      - name: Validate Chopsticks configuration
+        run: pnpm run chopsticks:validate
+
+      - name: Test Chopsticks configuration tooling
+        run: pnpm run test:chopsticks

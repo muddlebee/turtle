@@ -1,0 +1,3 @@
+relaychain: kusama
+parachains:
+  - kusama-assethub

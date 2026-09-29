@@ -1,0 +1,65 @@
+# Source: https://github.com/AcalaNetwork/chopsticks/blob/f6eab24db852e24c2c66e459600c3b9d68e2aa7b/configs/astar.yml
+# Local Turtle RPC: ws://127.0.0.1:8011
+host: 127.0.0.1
+port: 8011
+endpoint:
+  - wss://rpc.astar.network
+  - wss://astar-rpc.n.dwellir.com
+  - wss://astar.api.onfinality.io/public-ws
+mock-signature-host: true
+block: ${env.ASTAR_BLOCK_NUMBER}
+db: .chopsticks/db/astar.sqlite
+runtime-log-level: 5
+
+import-storage:
+  System:
+    Account:
+      -
+        -
+          - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+        - providers: 1
+          data:
+            free: '100000000000000000000000'
+      -
+        -
+          - ZAP5o2BjWAo5uoKDE6b6Xkk4Ju7k6bDu24LNjgZbfM3iyiR
+        - providers: 1
+          data:
+            free: '100000000000000000000000'
+      -
+        -
+          - ZD39yAE4W4RiXCyk1gv6CD2tSaVjQU5KoKfujyft4Xa2GAz
+        - providers: 1
+          data:
+            free: '100000000000000000000000'
+
+  # Sample list of available assetIds: https://github.com/AstarNetwork/astar-apps/blob/main/src/modules/xcm/tokens/index.ts
+  Assets:
+    Account:
+      -
+        -
+          # DOT
+          - '340282366920938463463374607431768211455'
+          - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+        - balance: 1000000000000000
+      -
+        -
+          # USDT
+          - '4294969280'
+          - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+        - balance: 100000000000
+  Council:
+    Members:
+      - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY # Alice
+      - ZAP5o2BjWAo5uoKDE6b6Xkk4Ju7k6bDu24LNjgZbfM3iyiR # Bob
+      - ZD39yAE4W4RiXCyk1gv6CD2tSaVjQU5KoKfujyft4Xa2GAz # Charlie
+  TechnicalCommittee:
+    Members:
+      - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+      - ZAP5o2BjWAo5uoKDE6b6Xkk4Ju7k6bDu24LNjgZbfM3iyiR
+      - ZD39yAE4W4RiXCyk1gv6CD2tSaVjQU5KoKfujyft4Xa2GAz
+  CommunityCouncil:
+    Members:
+      - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+      - ZAP5o2BjWAo5uoKDE6b6Xkk4Ju7k6bDu24LNjgZbfM3iyiR
+      - ZD39yAE4W4RiXCyk1gv6CD2tSaVjQU5KoKfujyft4Xa2GAz

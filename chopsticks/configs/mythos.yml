@@ -1,0 +1,20 @@
+# Source: https://github.com/AcalaNetwork/chopsticks/blob/f6eab24db852e24c2c66e459600c3b9d68e2aa7b/configs/mythos.yml
+# Local Turtle RPC: ws://127.0.0.1:8012
+host: 127.0.0.1
+port: 8012
+endpoint: wss://polkadot-mythos-rpc.polkadot.io/
+mock-signature-host: true
+block: ${env.MYTHOS_BLOCK_NUMBER}
+db: .chopsticks/db/mythos.sqlite
+runtime-log-level: 5
+
+import-storage:
+  System:
+    Account:
+      -
+        -
+          - 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+        - providers: 1
+          data:
+            free: 1000000000000000
+

@@ -1,0 +1,3 @@
+relaychain: polkadot
+parachains:
+  - polkadot-assethub

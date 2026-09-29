@@ -7,6 +7,7 @@ import {
 } from '@paraspell/sdk'
 import type { TransferParams } from '@/hooks/useTransfer'
 import { getParaSpellChain, getParaspellToken } from '@/lib/paraspell/transfer'
+import { paraspellRpcOverrides } from '@/utils/consts'
 import { toHuman } from '@/utils/transfer'
 
 const velocityRecoveryAccount = '148FYcbxxTnhTCgiTgyVod5LygZZRQiGn2bQA2YqaaZbb9WJ'
@@ -51,7 +52,13 @@ class XcmTransferBuilderManager {
     let builder: TxBuilder
     try {
       const senderAddress = sender.address
+      const apiOverrides = {
+        ...(sourceChain.rpcConnection && { [sourceChainNode]: sourceChain.rpcConnection }),
+        ...(destinationChain.rpcConnection && { [destinationChainNode]: destinationChain.rpcConnection }),
+        ...paraspellRpcOverrides,
+      }
       builder = Builder({
+        ...(Object.keys(apiOverrides).length > 0 && { apiOverrides }),
         abstractDecimals: false,
       })
         .from(sourceChainNode as TSubstrateChain)
@@ -205,6 +212,8 @@ function txKey(params: TransferParams): string {
     amount, // Source amount
     recipient,
     senderAddress,
+    ...(sourceChain.rpcConnection ? [encodeURIComponent(sourceChain.rpcConnection)] : []),
+    ...(destinationChain.rpcConnection ? [encodeURIComponent(destinationChain.rpcConnection)] : []),
   ].join('|')
 }
 

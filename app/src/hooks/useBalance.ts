@@ -4,6 +4,7 @@ import type { Balance, Chain, Network, Token } from '@velocitylabs-org/turtle-re
 import { useCallback, useEffect, useState } from 'react'
 import { arbitrum, mainnet } from 'viem/chains'
 import { useBalance as useBalanceWagmi, useChainId, useSwitchChain } from 'wagmi'
+import { paraspellRpcOverrides } from '@/utils/env'
 import { getNativeToken, getParaSpellChain, getParaspellToken } from '@/utils/paraspellTransfer'
 import { toHuman } from '@/utils/transfer'
 
@@ -115,6 +116,7 @@ async function getBalance(chain: Chain, token: Token, address: string): Promise<
       address,
       chain: node as TSubstrateChain,
       currency,
+      api: paraspellRpcOverrides[node] ?? chain.rpcConnection,
     })) ?? 0n
 
   return {

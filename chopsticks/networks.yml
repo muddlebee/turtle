@@ -1,0 +1,43 @@
+polkadot:
+  config: configs/polkadot.yml
+  paraspellChain: Polkadot
+polkadot-assethub:
+  config: configs/polkadot-assethub.yml
+  paraspellChain: AssetHubPolkadot
+polkadot-bridgehub:
+  config: configs/polkadot-bridgehub.yml
+  paraspellChain: BridgeHubPolkadot
+bifrost:
+  config: configs/bifrost.yml
+  paraspellChain: BifrostPolkadot
+hydration:
+  config: configs/hydration.yml
+  paraspellChain: Hydration
+phala:
+  config: configs/phala.yml
+moonbeam:
+  config: configs/moonbeam.yml
+  paraspellChain: Moonbeam
+interlay:
+  config: configs/interlay.yml
+  paraspellChain: Interlay
+acala:
+  config: configs/acala.yml
+  paraspellChain: Acala
+polimec:
+  config: configs/polimec.yml
+centrifuge:
+  config: configs/centrifuge.yml
+  paraspellChain: Centrifuge
+astar:
+  config: configs/astar.yml
+  paraspellChain: Astar
+mythos:
+  config: configs/mythos.yml
+  paraspellChain: Mythos
+kusama:
+  config: configs/kusama.yml
+  paraspellChain: Kusama
+kusama-assethub:
+  config: configs/kusama-assethub.yml
+  paraspellChain: AssetHubKusama

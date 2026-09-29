@@ -43,7 +43,7 @@ _Parachain prerequisites coming soon._
 ✋ Be careful to schemas when updating any type models. (It must not happen often).<br/>
 => Check chain swap on the app, sourcechain/destchain filters, sourcechain/tokens filters (UI checks in the transfer form).
 
-Confirm that the selected transfer SDK supports the chain. Provider SDKs (ParaSpell, Snowbridge, and Chainflip) own their default connection configuration; do not add RPC endpoints to the Turtle registry.
+Confirm that the selected transfer SDK supports the chain. Provider SDKs (ParaSpell, Snowbridge, and Chainflip) own their default connection configuration; do not add production RPC endpoints to the Turtle registry. The optional `rpcConnection` chain field is reserved for programmatic local overrides. For connected local networks, add or update the checked-in Chopsticks config and topology described in `../chopsticks/README.md`.
 
 **2. ⚙️ Update Polkadot API/PAPI configuration:** (To fetch the balances)
 

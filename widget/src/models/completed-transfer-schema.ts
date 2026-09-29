@@ -11,6 +11,7 @@ const looseChainSchema = z.object({
   supportedAddressTypes: z.array(z.enum(['evm', 'ss58'])).optional(),
   walletType: z.enum(['EVM', 'Substrate', 'SubstrateEVM']).optional(),
   destinationFeeDOT: z.string().optional(),
+  rpcConnection: z.string().optional(),
   supportExecuteExtrinsic: z.boolean().optional(),
 })
 
