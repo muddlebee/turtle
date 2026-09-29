@@ -4,6 +4,7 @@ import type { Dex } from '@/lib/paraspell/swap'
 import { getParaSpellChain, getParaspellToken } from '@/lib/paraspell/transfer'
 import type { SubstrateAccount } from '@/store/substrateWalletStore'
 import { getSenderAddress } from '@/utils/address'
+import { paraspellRpcOverrides } from '@/utils/consts'
 import { toHuman } from '@/utils/transfer'
 
 type TxBuilder = ReturnType<typeof RouterBuilder>
@@ -20,11 +21,13 @@ type RouterParamsComplete = RouterParamsWithSender & {
   sourceAmount: bigint | string
 }
 
-class XcmRouterBuilderManager {
+export const MAX_CACHED_ROUTER_BUILDERS = 8
+
+export class XcmRouterBuilderManager {
   private static instance: XcmRouterBuilderManager
   private builders: Map<string, TxBuilder>
 
-  private constructor() {
+  constructor(private readonly maxBuilders = MAX_CACHED_ROUTER_BUILDERS) {
     this.builders = new Map()
   }
 
@@ -53,11 +56,20 @@ class XcmRouterBuilderManager {
     const currencyTo = getParaspellToken(destinationToken, destinationChainFromId)
     const key = txKey(params, exchange)
 
-    if (this.builders.has(key)) return this.builders.get(key)!
+    const existingBuilder = this.getCachedBuilder(key)
+    if (existingBuilder) return existingBuilder
 
     let builder: TxBuilder
     try {
-      builder = RouterBuilder({ abstractDecimals: false })
+      const apiOverrides = {
+        ...(sourceChain.rpcConnection && { [sourceChainFromId]: sourceChain.rpcConnection }),
+        ...(destinationChain.rpcConnection && { [destinationChainFromId]: destinationChain.rpcConnection }),
+        ...paraspellRpcOverrides,
+      }
+      builder = RouterBuilder({
+        ...(Object.keys(apiOverrides).length > 0 && { apiOverrides }),
+        abstractDecimals: false,
+      })
         .from(sourceChainFromId)
         .to(destinationChainFromId)
         // biome-ignore lint/suspicious/noExplicitAny: any
@@ -66,7 +78,7 @@ class XcmRouterBuilderManager {
         .currencyTo(currencyTo)
         .amount(sourceAmount)
 
-      this.builders.set(key, builder)
+      this.cacheBuilder(key, builder)
     } catch (error) {
       console.error('Failed to create builder: ', error)
       throw error
@@ -77,8 +89,26 @@ class XcmRouterBuilderManager {
 
   getBuilder(params: TransferParams, exchange: Dex): TxBuilder {
     const key = txKey(params, exchange)
-    const existing = this.builders.get(key)
+    const existing = this.getCachedBuilder(key)
     return existing ?? this.createBuilder(params, exchange)
+  }
+
+  private getCachedBuilder(key: string): TxBuilder | undefined {
+    const builder = this.builders.get(key)
+    if (!builder) return undefined
+
+    this.builders.delete(key)
+    this.builders.set(key, builder)
+    return builder
+  }
+
+  private cacheBuilder(key: string, builder: TxBuilder) {
+    while (this.builders.size >= this.maxBuilders) {
+      const oldestKey = this.builders.keys().next().value
+      if (!oldestKey) break
+      this.builders.delete(oldestKey)
+    }
+    this.builders.set(key, builder)
   }
 
   async createRouterPlan(params: TransferParams, exchange: Dex = 'HydrationDex', slippagePct: string = '1') {
