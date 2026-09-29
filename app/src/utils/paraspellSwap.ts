@@ -17,6 +17,8 @@ const DEX_TO_CHAIN_MAP = {
 
 export type Dex = keyof typeof DEX_TO_CHAIN_MAP
 
+const dexPairsCache = new Map<string, [Token, Token][]>()
+
 /** returns all supported dex chains */
 const getSupportedDexChains = () => Object.values(DEX_TO_CHAIN_MAP)
 
@@ -42,6 +44,10 @@ const getDexTokens = (dex: Dex): Token[] => {
 
 /** returns all pairs supported by a dex and supported by our registry */
 const getDexPairs = (dex: Dex | [Dex, Dex, ...Dex[]]): [Token, Token][] => {
+  const cacheKey = Array.isArray(dex) ? dex.join(':') : dex
+  const cachedPairs = dexPairsCache.get(cacheKey)
+  if (cachedPairs) return cachedPairs
+
   const pairs = getExchangePairs(dex)
 
   const turtlePairs = pairs
@@ -56,6 +62,8 @@ const getDexPairs = (dex: Dex | [Dex, Dex, ...Dex[]]): [Token, Token][] => {
       return [t1, t2] as [Token, Token]
     })
     .filter((pair): pair is [Token, Token] => pair !== null)
+
+  dexPairsCache.set(cacheKey, turtlePairs)
   return turtlePairs
 }
 
