@@ -61,10 +61,13 @@ describe('XcmRouterBuilderManager', () => {
     RouterBuilderMock.mockImplementation(createFakeBuilder)
   })
 
-  it('uses configured RPC overrides when creating a router builder', () => {
+  it('loads the router only when creating a builder', async () => {
     const manager = new XcmRouterBuilderManager()
 
-    manager.createBuilder(createParams(1n) as never)
+    const builder = manager.createBuilder(createParams(1n) as never)
+
+    expect(RouterBuilderMock).not.toHaveBeenCalled()
+    await builder
 
     expect(RouterBuilderMock).toHaveBeenCalledWith({
       abstractDecimals: false,
@@ -75,17 +78,28 @@ describe('XcmRouterBuilderManager', () => {
     })
   })
 
-  it('evicts the least-recently-used builder when the cache is full', () => {
+  it('evicts the least-recently-used builder when the cache is full', async () => {
     const manager = new XcmRouterBuilderManager(2)
 
-    manager.createBuilder(createParams(1n) as never)
-    manager.createBuilder(createParams(2n) as never)
-    manager.getBuilder(createParams(1n) as never, 'HydrationDex')
-    manager.createBuilder(createParams(3n) as never)
+    await manager.createBuilder(createParams(1n) as never)
+    await manager.createBuilder(createParams(2n) as never)
+    await manager.getBuilder(createParams(1n) as never, 'HydrationDex')
+    await manager.createBuilder(createParams(3n) as never)
 
     expect(manager.builderList().size).toBe(2)
 
-    manager.getBuilder(createParams(2n) as never, 'HydrationDex')
+    await manager.getBuilder(createParams(2n) as never, 'HydrationDex')
     expect(RouterBuilderMock).toHaveBeenCalledTimes(4)
+  })
+
+  it('shares builder creation across concurrent requests', async () => {
+    const manager = new XcmRouterBuilderManager()
+
+    await Promise.all([
+      manager.createBuilder(createParams(1n) as never),
+      manager.createBuilder(createParams(1n) as never),
+    ])
+
+    expect(RouterBuilderMock).toHaveBeenCalledTimes(1)
   })
 })

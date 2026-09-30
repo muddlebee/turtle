@@ -1,4 +1,3 @@
-import { RouterBuilder } from '@paraspell/xcm-router'
 import type { TransferParams } from '@/hooks/useTransfer'
 import type { Dex } from '@/lib/paraspell/swap'
 import { getParaSpellChain, getParaspellToken } from '@/lib/paraspell/transfer'
@@ -7,7 +6,8 @@ import { getSenderAddress } from '@/utils/address'
 import { paraspellRpcOverrides } from '@/utils/consts'
 import { toHuman } from '@/utils/transfer'
 
-type TxBuilder = ReturnType<typeof RouterBuilder>
+type RouterBuilderFactory = typeof import('@paraspell/xcm-router')['RouterBuilder']
+type TxBuilder = ReturnType<RouterBuilderFactory>
 
 type RouterParamsBase = Pick<TransferParams, 'sourceChain' | 'destinationChain' | 'sourceToken' | 'destinationToken'>
 
@@ -26,9 +26,11 @@ export const MAX_CACHED_ROUTER_BUILDERS = 8
 export class XcmRouterBuilderManager {
   private static instance: XcmRouterBuilderManager
   private builders: Map<string, TxBuilder>
+  private buildersInFlight: Map<string, Promise<TxBuilder>>
 
   constructor(private readonly maxBuilders = MAX_CACHED_ROUTER_BUILDERS) {
     this.builders = new Map()
+    this.buildersInFlight = new Map()
   }
 
   static getInstance(): XcmRouterBuilderManager {
@@ -38,7 +40,7 @@ export class XcmRouterBuilderManager {
     return XcmRouterBuilderManager.instance
   }
 
-  createBuilder(params: TransferParams, exchange: Dex = 'HydrationDex'): TxBuilder {
+  async createBuilder(params: TransferParams, exchange: Dex = 'HydrationDex'): Promise<TxBuilder> {
     const { sourceChain, destinationChain, sourceToken, destinationToken, sourceAmount } = params
     const sourceChainFromId = getParaSpellChain(sourceChain)
     const destinationChainFromId = getParaSpellChain(destinationChain)
@@ -59,35 +61,45 @@ export class XcmRouterBuilderManager {
     const existingBuilder = this.getCachedBuilder(key)
     if (existingBuilder) return existingBuilder
 
-    let builder: TxBuilder
-    try {
+    const existingBuilderPromise = this.buildersInFlight.get(key)
+    if (existingBuilderPromise) return existingBuilderPromise
+
+    const builderPromise = (async () => {
+      const { RouterBuilder } = await import('@paraspell/xcm-router')
       const apiOverrides = {
         ...(sourceChain.rpcConnection && { [sourceChainFromId]: sourceChain.rpcConnection }),
         ...(destinationChain.rpcConnection && { [destinationChainFromId]: destinationChain.rpcConnection }),
         ...paraspellRpcOverrides,
       }
-      builder = RouterBuilder({
-        ...(Object.keys(apiOverrides).length > 0 && { apiOverrides }),
-        abstractDecimals: false,
-      })
-        .from(sourceChainFromId)
-        .to(destinationChainFromId)
-        // biome-ignore lint/suspicious/noExplicitAny: any
-        .exchange(exchange as any)
-        .currencyFrom(currencyIdFrom)
-        .currencyTo(currencyTo)
-        .amount(sourceAmount)
+      return (
+        RouterBuilder({
+          ...(Object.keys(apiOverrides).length > 0 && { apiOverrides }),
+          abstractDecimals: false,
+        })
+          .from(sourceChainFromId)
+          .to(destinationChainFromId)
+          // biome-ignore lint/suspicious/noExplicitAny: ParaSpell does not export the narrowed exchange type.
+          .exchange(exchange as any)
+          .currencyFrom(currencyIdFrom)
+          .currencyTo(currencyTo)
+          .amount(sourceAmount)
+      )
+    })()
+    this.buildersInFlight.set(key, builderPromise)
 
+    try {
+      const builder = await builderPromise
       this.cacheBuilder(key, builder)
+      return builder
     } catch (error) {
       console.error('Failed to create builder: ', error)
       throw error
+    } finally {
+      this.buildersInFlight.delete(key)
     }
-
-    return builder
   }
 
-  getBuilder(params: TransferParams, exchange: Dex): TxBuilder {
+  async getBuilder(params: TransferParams, exchange: Dex): Promise<TxBuilder> {
     const key = txKey(params, exchange)
     const existing = this.getCachedBuilder(key)
     return existing ?? this.createBuilder(params, exchange)
@@ -117,7 +129,7 @@ export class XcmRouterBuilderManager {
       const senderAddress = await getSenderAddress(params.sender)
       const recipientAddress = params.recipient
       // biome-ignore lint/suspicious/noExplicitAny: any
-      const builder = this.getBuilder(params, exchange) as any
+      const builder = (await this.getBuilder(params, exchange)) as any
       return await builder
         .slippagePct(slippagePct)
         .senderAddress(senderAddress)
@@ -133,7 +145,7 @@ export class XcmRouterBuilderManager {
 
   async getExchangeOutputAmount(params: RouterParamsWithAmount, exchange: Dex = 'HydrationDex') {
     try {
-      const builder = this.getBuilder(params as TransferParams, exchange)
+      const builder = await this.getBuilder(params as TransferParams, exchange)
       // biome-ignore lint/suspicious/noExplicitAny: any
       const amountOut = await (builder as any).getBestAmountOut()
       return amountOut.amountOut
@@ -148,7 +160,7 @@ export class XcmRouterBuilderManager {
     try {
       const senderAddress = await getSenderAddress(params.sender)
       const recipientAddress = params.recipient
-      const builder = this.getBuilder(params as TransferParams, exchange)
+      const builder = await this.getBuilder(params as TransferParams, exchange)
       // biome-ignore lint/suspicious/noExplicitAny: any
       return await (builder as any)
         .senderAddress(senderAddress)
@@ -164,7 +176,7 @@ export class XcmRouterBuilderManager {
     try {
       const senderAddress = await getSenderAddress(params.sender)
       const recipientAddress = params.recipient
-      const builder = this.getBuilder(params as TransferParams, exchange)
+      const builder = await this.getBuilder(params as TransferParams, exchange)
       // biome-ignore lint/suspicious/noExplicitAny: any
       return await (builder as any)
         .senderAddress(senderAddress)
@@ -182,7 +194,7 @@ export class XcmRouterBuilderManager {
       const senderAddress = await getSenderAddress(params.sender)
       const recipientAddress = params.recipient
       // biome-ignore lint/suspicious/noExplicitAny: any
-      const builder = this.getBuilder(params as TransferParams, exchange) as any
+      const builder = (await this.getBuilder(params as TransferParams, exchange)) as any
       return await builder
         .slippagePct(slippagePct)
         .senderAddress(senderAddress)
