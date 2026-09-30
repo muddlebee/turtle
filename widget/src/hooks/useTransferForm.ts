@@ -173,7 +173,7 @@ const useTransferForm = () => {
   }, [destinationChain, sourceChain, sourceTokenAmount, destinationTokenAmount, isValidating, transferStatus])
 
   const handleSourceChainChange = useCallback(
-    async (newValue: Chain | null) => {
+    (newValue: Chain | null) => {
       if (!newValue) {
         setValue('sourceChain', null)
         return
@@ -181,32 +181,28 @@ const useTransferForm = () => {
       if (newValue.uid === sourceChain?.uid) return
       const isSameDestination = destinationChain?.uid === newValue.uid
 
-      if (newValue.uid === Ethereum.uid) await switchChain(config, { chainId: mainnet.id }) // needed to fetch balance correctly
+      // Update the source chain here to prevent triggering unexpected states, e.g., the useFees hook.
+      setValue('sourceChain', newValue)
 
-      if (
-        destinationChain &&
-        sourceTokenAmount &&
+      const canKeepRoute =
+        !!destinationChain &&
+        !!sourceTokenAmount &&
         !isSameDestination &&
         isRouteAllowed(newValue, destinationChain, sourceTokenAmount)
-      ) {
-        // Update the source chain here to prevent triggering unexpected states, e.g., the useFees hook.
-        setValue('sourceChain', newValue)
-        return
+      const canKeepToken =
+        !isSameDestination && isTokenAvailableForSourceChain(newValue, destinationChain, sourceTokenAmount?.token)
+
+      if (!canKeepRoute && !canKeepToken) {
+        setValue('destinationChain', null)
+        setValue('manualRecipient', { enabled: false, address: '' })
+        setValue('sourceTokenAmount', { token: null, amount: null })
+        setTransferableAmount(null)
       }
 
-      if (!isSameDestination && isTokenAvailableForSourceChain(newValue, destinationChain, sourceTokenAmount?.token)) {
-        // Update the source chain here to prevent triggering unexpected states, e.g., the useFees hook.
-        setValue('sourceChain', newValue)
-        return
+      if (newValue.uid === Ethereum.uid) {
+        // Keep selection responsive. Balance fetching will retry the wallet switch if this best-effort sync fails.
+        void switchChain(config, { chainId: mainnet.id }).catch(() => undefined)
       }
-
-      // Update the source chain here to prevent triggering unexpected states, e.g., the useFees hook.
-      // Reset destination and token only if the conditions above are not met
-      setValue('sourceChain', newValue)
-      setValue('destinationChain', null)
-      setValue('manualRecipient', { enabled: false, address: '' })
-      setValue('sourceTokenAmount', { token: null, amount: null })
-      setTransferableAmount(null)
     },
     [setValue, sourceChain, destinationChain, sourceTokenAmount],
   )
