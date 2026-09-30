@@ -9,20 +9,25 @@ const url = isDevelopment ? 'http://localhost:3000' : vercelUrl
 
 const isProduction = process.env.NODE_ENV === 'production'
 
+export const configureWebpack = (config, { isServer }) => {
+  config.externals.push('pino-pretty', 'lokijs', 'encoding')
+  config.experiments = { ...config.experiments, asyncWebAssembly: true, topLevelAwait: true, layers: true }
+  config.output.webassemblyModuleFilename = isServer
+    ? '../static/wasm/[modulehash].wasm'
+    : 'static/wasm/[modulehash].wasm'
+
+  config.module.rules.push({
+    test: /\.wasm$/,
+    type: 'webassembly/async',
+  })
+
+  return config
+}
+
 const nextConfig = {
   // Related to this issue: https://github.com/vercel/next.js/issues/56887
   ...(!isProduction && { outputFileTracingRoot: '/' }),
-  webpack: config => {
-    config.externals.push('pino-pretty', 'lokijs', 'encoding')
-    config.experiments = { asyncWebAssembly: true, topLevelAwait: true, layers: true }
-
-    config.module.rules.push({
-      test: /\.wasm$/,
-      type: 'webassembly/async',
-    })
-
-    return config
-  },
+  webpack: configureWebpack,
   experimental: {
     webpackMemoryOptimizations: true,
     optimizePackageImports: ['lucide-react'],
