@@ -62,7 +62,7 @@ Turtle is gradually changing its structure to a monorepo handled by [Turborepo](
 
 ### First things first
 
-`.env` files are local to the packages
+`.env` files are local to the packages. See [Environment variables](./docs/environment-variables.md) for setup, public-variable safety, and ParaSpell RPC override behavior.
 
 In the root of the project run: 
 

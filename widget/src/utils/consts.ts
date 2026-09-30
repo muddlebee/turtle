@@ -1,4 +1,4 @@
-import { parseParaspellRpcOverrides } from '@/utils/paraspellRpcOverrides'
+import { resolveParaspellRpcOverrides } from '@/utils/paraspellRpcOverrides'
 
 export const isDevelopment: boolean = import.meta.env.DEV
 export const isProduction: boolean = import.meta.env.PROD
@@ -14,4 +14,4 @@ export const AMOUNT_VS_FEE_RATIO: number = 10
 
 export const ANALYTICS_DASHBOARD_BASE_URL: string = import.meta.env.VITE_ANALYTICS_DASHBOARD_BASE_URL || ''
 export const ANALYTICS_WIDGET_AUTH_TOKEN: string = import.meta.env.VITE_ANALYTICS_WIDGET_AUTH_TOKEN || ''
-export const paraspellRpcOverrides = parseParaspellRpcOverrides(import.meta.env.VITE_PUBLIC_PARASPELL_RPC_OVERRIDES)
+export const paraspellRpcOverrides = resolveParaspellRpcOverrides(import.meta.env.VITE_PUBLIC_PARASPELL_RPC_OVERRIDES)

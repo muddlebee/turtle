@@ -1,5 +1,9 @@
 import { CHAINS, type TChain } from '@paraspell/sdk'
 
+const defaultParaspellRpcOverrides = {
+  Hydration: 'wss://hydration-rpc.n.dwellir.com',
+} satisfies Partial<Record<TChain, string>>
+
 function isTChain(value: string): value is TChain {
   return CHAINS.some(chain => chain === value)
 }
@@ -40,4 +44,11 @@ export function parseParaspellRpcOverrides(value: string | undefined): Partial<R
     overrides[chain] = parseWebSocketUrl(rpcUrl, chain)
   }
   return overrides
+}
+
+export function resolveParaspellRpcOverrides(value: string | undefined): Partial<Record<TChain, string>> {
+  return {
+    ...defaultParaspellRpcOverrides,
+    ...parseParaspellRpcOverrides(value),
+  }
 }
