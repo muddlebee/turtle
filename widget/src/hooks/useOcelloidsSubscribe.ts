@@ -2,61 +2,102 @@ import { useCallback, useEffect, useRef } from 'react'
 import useCompletedTransfers from '@/hooks/useCompletedTransfers'
 import useNotification from '@/hooks/useNotification'
 import useOngoingTransfers from '@/hooks/useOngoingTransfers'
-import { getOcelloidsAgentApi, getSubscribableTransfers, xcmOcceloidsSubscribe } from '@/lib/ocelloids'
+import {
+  getOcelloidsJourneys,
+  getSubscribableTransfers,
+  isTerminalJourney,
+  journeyMatchesTransfer,
+  type OcelloidsJourney,
+  streamOcelloidsJourneys,
+  updateTransferFromOcelloidsJourney,
+} from '@/lib/ocelloids'
 import type { StoredTransfer } from '@/models/transfer'
 
 const useOcelloidsSubscribe = (ongoingTransfers: StoredTransfer[]) => {
   const { remove, updateStatus, updateProgress } = useOngoingTransfers()
   const { addCompletedTransfer } = useCompletedTransfers()
   const { addNotification } = useNotification()
-  const { current: subscribedTransfers } = useRef(new Set<string>())
+  const transfersRef = useRef<StoredTransfer[]>([])
+  const streamsRef = useRef(new Map<string, EventSource>())
+  const pendingStreamsRef = useRef(new Set<string>())
+  const queriedTransfersRef = useRef(new Set<string>())
+  const settledTransfersRef = useRef(new Set<string>())
+  const streamAddressesRef = useRef(new Set<string>())
 
   const xcmTransfers = getSubscribableTransfers(ongoingTransfers)
 
-  const fetchAgentAndSubscribe = useCallback(async () => {
-    if (xcmTransfers.length === 0) return
+  const handleJourney = useCallback(
+    (journey: OcelloidsJourney) => {
+      const transfer = transfersRef.current.find(candidate => journeyMatchesTransfer(journey, candidate))
+      if (!transfer) return
+      if (isTerminalJourney(journey) && settledTransfersRef.current.has(transfer.id)) return
 
-    try {
-      const xcmAgent = await getOcelloidsAgentApi()
-      if (!xcmAgent) throw new Error('Failed to initialize Ocelloids Agent')
-
-      for (const t of xcmTransfers) {
-        if (!subscribedTransfers.has(t.id)) {
-          try {
-            await xcmOcceloidsSubscribe(
-              xcmAgent,
-              t,
-              remove,
-              addCompletedTransfer,
-              updateStatus,
-              addNotification,
-              // fill the progress before moving the transfer to the completed list
-              updateProgress,
-            )
-            subscribedTransfers.add(t.id)
-          } catch (error) {
-            console.error('Error subscribing to transfer:', t, error)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error during Ocelloids subscription:', error)
-    }
-  }, [xcmTransfers, remove, addCompletedTransfer, updateStatus, addNotification, updateProgress])
+      const settled = updateTransferFromOcelloidsJourney(
+        journey,
+        transfer,
+        remove,
+        addCompletedTransfer,
+        updateStatus,
+        addNotification,
+        updateProgress,
+      )
+      if (settled) settledTransfersRef.current.add(transfer.id)
+    },
+    [addCompletedTransfer, addNotification, remove, updateProgress, updateStatus],
+  )
 
   useEffect(() => {
-    fetchAgentAndSubscribe()
+    transfersRef.current = xcmTransfers
+    const activeIds = new Set(xcmTransfers.map(transfer => transfer.id))
+    for (const id of settledTransfersRef.current) {
+      if (!activeIds.has(id)) settledTransfersRef.current.delete(id)
+    }
+    for (const id of queriedTransfersRef.current) {
+      if (!activeIds.has(id)) queriedTransfersRef.current.delete(id)
+    }
 
-    return () => {
-      const activeIds = xcmTransfers.map(t => t.id)
+    const addresses = new Set(xcmTransfers.map(transfer => transfer.sender))
+    streamAddressesRef.current = addresses
+    for (const [address, stream] of streamsRef.current) {
+      if (!addresses.has(address)) {
+        stream.close()
+        streamsRef.current.delete(address)
+      }
+    }
 
-      subscribedTransfers.forEach(id => {
-        if (!activeIds.includes(id)) {
-          subscribedTransfers.delete(id)
-        }
+    for (const address of addresses) {
+      if (streamsRef.current.has(address) || pendingStreamsRef.current.has(address)) continue
+      pendingStreamsRef.current.add(address)
+      void streamOcelloidsJourneys(address, handleJourney)
+        .then(stream => {
+          pendingStreamsRef.current.delete(address)
+          if (streamAddressesRef.current.has(address)) streamsRef.current.set(address, stream)
+          else stream.close()
+        })
+        .catch(() => {
+          pendingStreamsRef.current.delete(address)
+        })
+    }
+
+    for (const transfer of xcmTransfers) {
+      if (queriedTransfersRef.current.has(transfer.id)) continue
+      queriedTransfersRef.current.add(transfer.id)
+      void getOcelloidsJourneys(transfer).then(journeys => {
+        for (const journey of journeys) handleJourney(journey)
       })
     }
-  }, [xcmTransfers, fetchAgentAndSubscribe])
+  }, [handleJourney, xcmTransfers])
+
+  useEffect(
+    () => () => {
+      streamAddressesRef.current = new Set()
+      pendingStreamsRef.current.clear()
+      queriedTransfersRef.current.clear()
+      for (const stream of streamsRef.current.values()) stream.close()
+      streamsRef.current.clear()
+    },
+    [],
+  )
 }
 
 export default useOcelloidsSubscribe
