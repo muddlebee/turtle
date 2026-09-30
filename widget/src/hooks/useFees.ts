@@ -9,7 +9,7 @@ import {
   PolkadotTokens,
   type Token,
 } from '@velocitylabs-org/turtle-registry'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { encodeFunctionData, erc20Abi, type PublicClient, parseEther, parseUnits, type WalletClient } from 'viem'
 import { usePublicClient, useWalletClient } from 'wagmi'
 import { useChainflipQuote } from '@/hooks/useChainflipQuote'
@@ -23,6 +23,7 @@ import { getCachedTokenPrice } from '@/services/balance'
 import xcmRouterBuilderManager from '@/services/paraspell/xcmRouterBuilder.ts'
 import xcmTransferBuilderManager from '@/services/paraspell/xcmTransferBuilder'
 import { chainflipToRegistryChain, getFeeLabelFromType, getFeeTokenFromAssetSymbol } from '@/utils/chainflip'
+import { LatestRequest } from '@/utils/latestRequest'
 import { resolveSdk } from '@/utils/routes'
 import { Direction, isSwap, safeConvertAmount, toHuman } from '@/utils/transfer'
 import useBalance from './useBalance'
@@ -61,6 +62,7 @@ export default function useFees(params: UseFeesParams) {
   // Indicates whether the source token balance is enough to cover both fees and transfer amount
   const [isBalanceSufficientForFees, setIsBalanceSufficientForFees] = useState<boolean>(true)
   const [loading, setLoading] = useState<boolean>(false)
+  const latestRequest = useRef(new LatestRequest())
   const { snowbridgeContext, isSnowbridgeContextLoading, snowbridgeContextError } = useSnowbridgeContext()
   const { addNotification } = useNotification()
   const publicClient = usePublicClient()
@@ -89,6 +91,18 @@ export default function useFees(params: UseFeesParams) {
   })
 
   const fetchFees = useCallback(async () => {
+    const request = latestRequest.current.start()
+    const isCurrent = () => latestRequest.current.isCurrent(request)
+    const setCurrentFees = (value: FeeDetails[] | null) => {
+      if (isCurrent()) setFees(value)
+    }
+    const setCurrentBalanceSufficient = (value: boolean) => {
+      if (isCurrent()) setIsBalanceSufficientForFees(value)
+    }
+    const setCurrentLoading = (value: boolean) => {
+      if (isCurrent()) setLoading(value)
+    }
+
     if (
       !sourceChain ||
       !destinationChain ||
@@ -99,8 +113,9 @@ export default function useFees(params: UseFeesParams) {
       !recipientAddress ||
       sourceTokenAmountError
     ) {
-      setFees(null)
-      setIsBalanceSufficientForFees(true)
+      setCurrentFees(null)
+      setCurrentBalanceSufficient(true)
+      setCurrentLoading(false)
       return
     }
 
@@ -109,8 +124,8 @@ export default function useFees(params: UseFeesParams) {
     try {
       switch (sdk) {
         case 'ParaSpellApi': {
-          setLoading(true)
-          setIsBalanceSufficientForFees(true)
+          setCurrentLoading(true)
+          setCurrentBalanceSufficient(true)
           const sourceChainNode = getParaSpellChain(sourceChain)
           if (!sourceChainNode) throw new Error('Source chain id not found')
 
@@ -209,7 +224,7 @@ export default function useFees(params: UseFeesParams) {
           }
 
           const feeList: FeeDetails[] = [...origin, ...intermediate, ...destination]
-          setFees(feeList)
+          setCurrentFees(feeList)
           const sourceAmountBigInt = safeConvertAmount(sourceTokenAmount, sourceToken) ?? 0n
 
           Promise.all([
@@ -232,7 +247,7 @@ export default function useFees(params: UseFeesParams) {
             .then(([maxTransferableAmount, minTransferableAmount]) => {
               // @ts-ignore NOTE: when minTransferableAmount is 0, it means that the user has no balance to cover the transfer
               if (minTransferableAmount === 0) {
-                setIsBalanceSufficientForFees(false)
+                setCurrentBalanceSufficient(false)
                 return
               }
 
@@ -243,10 +258,10 @@ export default function useFees(params: UseFeesParams) {
               if (minTransferableAmount) {
                 isSufficient = isSufficient && sourceAmountBigInt >= minTransferableAmount
               }
-              setIsBalanceSufficientForFees(isSufficient)
+              setCurrentBalanceSufficient(isSufficient)
             })
             .catch(error => {
-              console.error('Error checking transferable amounts:', error)
+              if (isCurrent()) console.error('Error checking transferable amounts:', error)
             })
 
           break
@@ -254,15 +269,15 @@ export default function useFees(params: UseFeesParams) {
 
         case 'SnowbridgeApi': {
           if (!sourceChain || !senderAddress || !destinationChain || !sourceTokenAmount || !recipientAddress) {
-            setLoading(false)
-            setFees(null)
+            setCurrentLoading(false)
+            setCurrentFees(null)
             return
           }
 
-          setLoading(true)
-          setIsBalanceSufficientForFees(true)
+          setCurrentLoading(true)
+          setCurrentBalanceSufficient(true)
           if (isSnowbridgeContextLoading) {
-            setFees(null)
+            setCurrentFees(null)
             return
           }
 
@@ -286,8 +301,8 @@ export default function useFees(params: UseFeesParams) {
 
           // Check if this is an insufficient funds error where the amount is not enough to cover both the transfer fees and the requested amount
           if ('error' in snowbridgeFees && snowbridgeFees.error === 'INSUFFICIENT_FUNDS') {
-            setFees(null)
-            setIsBalanceSufficientForFees(false)
+            setCurrentFees(null)
+            setCurrentBalanceSufficient(false)
             return
           }
 
@@ -331,20 +346,20 @@ export default function useFees(params: UseFeesParams) {
             feeList.push(bridging)
           }
 
-          setFees(feeList)
+          setCurrentFees(feeList)
           const isSufficient = sourceEthAmount + bridgingAmount + executionAmount < ethBalanceAmount // Check if the balance is enough for all fees
-          setIsBalanceSufficientForFees(isSufficient)
+          setCurrentBalanceSufficient(isSufficient)
 
           break
         }
 
         case 'ChainflipApi': {
           if (!chainflipQuote || isChainflipQuoteError) {
-            setFees(null)
-            setIsBalanceSufficientForFees(true)
+            setCurrentFees(null)
+            setCurrentBalanceSufficient(true)
             return
           }
-          setLoading(true)
+          setCurrentLoading(true)
 
           const isEvmNetwork = sourceChain.network === 'Ethereum' || sourceChain.network === 'Arbitrum'
 
@@ -422,7 +437,7 @@ export default function useFees(params: UseFeesParams) {
             })
           }
 
-          setFees(feeList)
+          setCurrentFees(feeList)
           break
         }
 
@@ -430,7 +445,8 @@ export default function useFees(params: UseFeesParams) {
           throw new Error('Unsupported direction')
       }
     } catch (error) {
-      setFees(null)
+      if (!isCurrent()) return
+      setCurrentFees(null)
       captureException(error, {
         extra: {
           error,
@@ -452,7 +468,7 @@ export default function useFees(params: UseFeesParams) {
         dismissible: true,
       })
     } finally {
-      setLoading(false)
+      setCurrentLoading(false)
     }
   }, [
     sourceChain,
@@ -479,6 +495,8 @@ export default function useFees(params: UseFeesParams) {
 
   useEffect(() => {
     fetchFees()
+
+    return () => latestRequest.current.cancel()
   }, [fetchFees])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: We need fees to be in this array of dependencies

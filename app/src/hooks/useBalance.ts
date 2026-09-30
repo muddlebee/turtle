@@ -1,10 +1,11 @@
 import { getBalance as getParaspellBalance, type TSubstrateChain } from '@paraspell/sdk'
 import { captureException } from '@sentry/nextjs'
 import type { Balance, Chain, Network, Token } from '@velocitylabs-org/turtle-registry'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { arbitrum, mainnet } from 'viem/chains'
 import { useBalance as useBalanceWagmi, useChainId, useSwitchChain } from 'wagmi'
 import { paraspellRpcOverrides } from '@/utils/env'
+import { LatestRequest } from '@/utils/latestRequest'
 import { getNativeToken, getParaSpellChain, getParaspellToken } from '@/utils/paraspellTransfer'
 import { toHuman } from '@/utils/transfer'
 
@@ -18,6 +19,7 @@ interface UseBalanceParams {
 const useBalance = ({ chain, token, address }: UseBalanceParams) => {
   const [balance, setBalance] = useState<Balance | undefined>()
   const [loading, setLoading] = useState<boolean>(false)
+  const latestRequest = useRef(new LatestRequest())
   const { switchChainAsync } = useSwitchChain()
   const chainId = useChainId()
 
@@ -51,11 +53,16 @@ const useBalance = ({ chain, token, address }: UseBalanceParams) => {
   )
 
   const fetchBalance = useCallback(async () => {
+    const request = latestRequest.current.start()
+
     // Reset balance first to avoid showing the balance on another
     // chain or for another token while fetching the new one.
     setBalance(undefined)
 
-    if (!chain || !token || !address) return
+    if (!chain || !token || !address) {
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)
@@ -89,17 +96,20 @@ const useBalance = ({ chain, token, address }: UseBalanceParams) => {
           throw new Error('Unsupported network')
       }
 
-      setBalance(fetchedBalance)
+      if (latestRequest.current.isCurrent(request)) setBalance(fetchedBalance)
     } catch (error) {
+      if (!latestRequest.current.isCurrent(request)) return
       console.error('Failed to fetch balance', error)
       captureException(error)
     } finally {
-      setLoading(false)
+      if (latestRequest.current.isCurrent(request)) setLoading(false)
     }
   }, [chain, address, fetchErc20Balance, fetchEthBalance, handleNetwork, token])
 
   useEffect(() => {
     fetchBalance()
+
+    return () => latestRequest.current.cancel()
   }, [fetchBalance])
 
   return { balance, fetchBalance, loading: loading || loadingErc20Balance || loadingEthBalance }
