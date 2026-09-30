@@ -4,7 +4,6 @@ import { headers } from 'next/headers'
 import type { ReactNode } from 'react'
 import { twMerge } from 'tailwind-merge'
 import { dazzed } from '@/components/fonts/fonts'
-import Navbar from '@/components/NavBar'
 import NotificationSystem from '@/components/NotificationSystem'
 import ContextProvider from '@/context'
 import { TURTLE_CONFIG } from '@/utils/turle.config'
@@ -30,7 +29,6 @@ export default async function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={twMerge(dazzed.variable, 'min-h-full bg-turtle-tertiary font-dazzed')}>
-        <Navbar />
         <NotificationSystem />
         <ContextProvider cookies={cookies}>{children}</ContextProvider>
         <Analytics />

@@ -2,7 +2,6 @@
 import { captureException } from '@sentry/nextjs'
 import Image from 'next/image'
 import { useEffect } from 'react'
-import Navbar from '@/components/NavBar'
 
 const imageStyles = { objectFit: 'cover' as const }
 
@@ -30,11 +29,6 @@ export default function GlobalError({ error }: ErrorProps) {
         />
         {/* background overlay*/}
         <div className="turtle-dark-overlay absolute h-full w-full"></div>
-
-        {/* Header */}
-        <div className="absolute inset-x-0 top-0">
-          <Navbar />
-        </div>
 
         {/* Content */}
         <section className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center">
