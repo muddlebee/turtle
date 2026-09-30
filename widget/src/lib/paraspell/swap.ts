@@ -1,12 +1,5 @@
-import { getExchangePairs } from '@paraspell/xcm-router'
-import {
-  type Chain,
-  getTokenByLocation,
-  Hydration,
-  isSameToken,
-  REGISTRY,
-  type Token,
-} from '@velocitylabs-org/turtle-registry'
+import { type Chain, Hydration, isSameToken, REGISTRY, type Token } from '@velocitylabs-org/turtle-registry'
+import { HYDRATION_DEX_TOKEN_IDS } from '@/lib/paraspell/swapMetadata'
 import { isSameChain } from '@/utils/routes'
 
 // We only support Hydration for now.
@@ -17,7 +10,11 @@ const DEX_TO_CHAIN_MAP = {
 
 export type Dex = keyof typeof DEX_TO_CHAIN_MAP
 
-const dexPairsCache = new Map<string, [Token, Token][]>()
+const hydrationDexTokens = HYDRATION_DEX_TOKEN_IDS.map(tokenId =>
+  REGISTRY.tokens.find(token => token.id === tokenId),
+).filter((token): token is Token => token !== undefined)
+
+const hydrationDexTokenIds = new Set<string>(HYDRATION_DEX_TOKEN_IDS)
 
 /** returns all supported dex chains */
 const getSupportedDexChains = () => Object.values(DEX_TO_CHAIN_MAP)
@@ -30,61 +27,18 @@ const getDex = (chain: Chain): Dex | undefined => {
 
 /** returns all tokens supported by a dex that are also supported by our registry and have at least one trading pair */
 const getDexTokens = (dex: Dex): Token[] => {
-  const pairs = getDexPairs(dex)
-
-  const uniqueTokens = new Map(
-    pairs.flatMap(([token1, token2]) => [
-      [token1.id, token1],
-      [token2.id, token2],
-    ]),
-  )
-
-  return Array.from(uniqueTokens.values())
-}
-
-/** returns all pairs supported by a dex and supported by our registry */
-const getDexPairs = (dex: Dex | [Dex, Dex, ...Dex[]]): [Token, Token][] => {
-  const cacheKey = Array.isArray(dex) ? dex.join(':') : dex
-  const cachedPairs = dexPairsCache.get(cacheKey)
-  if (cachedPairs) return cachedPairs
-
-  const pairs = getExchangePairs(dex)
-  const turtlePairs = pairs
-    .map(pair => {
-      const [token1, token2] = pair
-      if (!token1.location || !token2.location) return null
-
-      const t1 = getTokenByLocation(token1.location)
-      const t2 = getTokenByLocation(token2.location)
-      if (!t1 || !t2) return null // not supported by turtle registry
-      return [t1, t2] as [Token, Token]
-    })
-    .filter((pair): pair is [Token, Token] => pair !== null)
-
-  dexPairsCache.set(cacheKey, turtlePairs)
-  return turtlePairs
+  return dex === 'HydrationDex' ? hydrationDexTokens : []
 }
 
 /** returns all tokens that can be traded with the given source token on the specified dex */
 const getTradeableTokens = (dex: Dex, sourceToken: Token): Token[] => {
-  const dexPairs = getDexPairs(dex)
-  const tradeableTokens = new Set<Token>()
-
-  dexPairs.forEach(([token1, token2]) => {
-    if (isSameToken(token1, sourceToken)) {
-      tradeableTokens.add(token2)
-    } else if (isSameToken(token2, sourceToken)) {
-      tradeableTokens.add(token1)
-    }
-  })
-
-  return Array.from(tradeableTokens)
+  const dexTokens = getDexTokens(dex)
+  if (!dexTokens.some(token => isSameToken(token, sourceToken))) return []
+  return dexTokens.filter(token => !isSameToken(token, sourceToken))
 }
 
 /** returns all allowed source chains for a swap. */
 export const getSwapsSourceChains = (): Chain[] => {
-  const dexPairs = getDexPairs('HydrationDex')
-  const dexTokenIds = new Set(dexPairs.flat().map(token => token.id))
   const routesToHydration = new Map(
     REGISTRY.routes.filter(route => route.to === Hydration.uid).map(route => [route.from, route]),
   )
@@ -107,7 +61,7 @@ export const getSwapsSourceChains = (): Chain[] => {
     const route = routesToHydration.get(chain.uid)
     if (!route) continue
 
-    if (route.tokens.some(tokenId => dexTokenIds.has(tokenId))) {
+    if (route.tokens.some(tokenId => hydrationDexTokenIds.has(tokenId))) {
       seenChainUids.add(chain.uid)
       result.push(chain)
     }
@@ -128,11 +82,7 @@ export const getSwapsSourceTokens = (sourceChain: Chain | null): Token[] => {
   const routeToDex = REGISTRY.routes.find(route => route.from === sourceChain.uid && route.to === Hydration.uid)
   if (!routeToDex) return []
 
-  const dexTokens = getDexPairs('HydrationDex')
-
-  const tokenIdsWithTradingPair = routeToDex.tokens.filter(tokenId =>
-    dexTokens.some(pair => pair.some(token => token.id === tokenId)),
-  )
+  const tokenIdsWithTradingPair = routeToDex.tokens.filter(tokenId => hydrationDexTokenIds.has(tokenId))
 
   const tokensWithTradingPair = tokenIdsWithTradingPair
     .map(tokenId => REGISTRY.tokens.find(token => token.id === tokenId))

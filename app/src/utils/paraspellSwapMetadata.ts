@@ -1,0 +1,26 @@
+// Registry tokens supported by ParaSpell's HydrationDex in @paraspell/xcm-router 12.8.3.
+// Keeping selector metadata local avoids loading the router and its WASM dependencies during initial render.
+export const HYDRATION_DEX_TOKEN_IDS = [
+  'usdc',
+  'usdt',
+  'ausdt',
+  'dot',
+  'vdot',
+  'tbtc.e',
+  'gigadot',
+  'sol.wormhole',
+  'hdx',
+  'intr',
+  'ksm-bridged',
+  'glmr',
+  'bnc',
+  'lido.e',
+  'sky.e',
+  'trac.e',
+  'link.e',
+  'aave.e',
+  'ibtc',
+  'usdc.e',
+  'usdt.e',
+  'wsteth.e',
+] as const

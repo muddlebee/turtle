@@ -21,10 +21,10 @@ describe('ParaSpell swap selectors', () => {
     getExchangePairsMock.mockClear()
   })
 
-  it('resolves exchange pairs once across repeated selector queries', () => {
-    getSwapsSourceTokens(AssetHub)
-    getSwapsSourceTokens(AssetHub)
+  it('resolves supported tokens without loading the router SDK', () => {
+    const tokenIds = getSwapsSourceTokens(AssetHub).map(token => token.id)
 
-    expect(getExchangePairsMock).toHaveBeenCalledTimes(1)
+    expect(tokenIds).toContain('usdc')
+    expect(getExchangePairsMock).not.toHaveBeenCalled()
   })
 })
