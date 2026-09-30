@@ -4,7 +4,6 @@ import {
   arbitrumOrigin,
   Ethereum,
   ethereumOrigin,
-  Polkadot,
   populateTokens,
   sharedArbitrumTokenBase,
   sharedEthTokenBase,
@@ -12,14 +11,14 @@ import {
 import { describe, expect, it } from 'vitest'
 import { type ChainflipChain, chainflipToRegistryChain } from '@/utils/chainflip'
 
-const ChainflipChains: ChainflipChain[] = ['Ethereum', 'Polkadot', 'Assethub', 'Arbitrum']
+const ChainflipChains: ChainflipChain[] = ['Ethereum', 'Assethub', 'Arbitrum']
 
 describe('Chainflip Chains', () => {
   it('should match the corresponding Turtle registry chains', () => {
     const registryChains = ChainflipChains.map(chain => {
       return chainflipToRegistryChain(chain)
     })
-    expect(registryChains).toStrictEqual([Ethereum, Polkadot, AssetHub, Arbitrum])
+    expect(registryChains).toStrictEqual([Ethereum, AssetHub, Arbitrum])
     expect(() => chainflipToRegistryChain('Unknown' as ChainflipChain)).toThrow()
   })
 })

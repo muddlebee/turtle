@@ -21,8 +21,8 @@ import { useChainflipStore } from '@/store/chainflipStore'
 import { getChainSpecificAddress } from './address'
 
 /** TYPES */
-export type AssetSymbol = 'DOT' | 'USDC' | 'USDT' | 'ETH' | 'FLIP' | 'BTC' | 'SOL'
-export type ChainflipChain = 'Ethereum' | 'Polkadot' | 'Assethub' | 'Arbitrum' | 'Bitcoin' | 'Solana'
+export type AssetSymbol = AssetData['symbol']
+export type ChainflipChain = ChainData['chain']
 export type ChainflipFeeType = 'NETWORK' | 'INGRESS' | 'EGRESS' | 'BROKER' | 'BOOST' | 'REFUND'
 export type ChainflipQuote = RegularQuote | DCAQuote
 
@@ -221,11 +221,11 @@ export const getSwapStatus = async (depositChannelId: string): Promise<SwapStatu
  * reducing risks.
  * Assethub have a deterministic finality and do not require any confirmations.
  */
-export const getRequiredBlockConfirmation = async (ChainflipChain: ChainflipChain): Promise<number | null> => {
+export const getRequiredBlockConfirmation = async (chainflipChain: ChainflipChain): Promise<number | null> => {
   const sdk = getChainflipSdk()
   if (!sdk) throw new Error('Chainflip SDK not initialized.')
 
-  return (await sdk.getRequiredBlockConfirmations())[ChainflipChain]
+  return (await sdk.getRequiredBlockConfirmations())[chainflipChain]
 }
 
 /** Returns a Chainflip chain matching with Turtle chain. */
@@ -234,16 +234,8 @@ export const getChainflipChain = async (chain: Chain): Promise<ChainData | undef
   if (!sdk) throw new Error('Chainflip SDK not initialized.')
   const chainflipChains = await sdk.getChains()
 
-  // Here we map through chainflipChains and find the chain that matches Turtle chain.uid.
-  // Considering chainflipChains data, it can only be Ethereum or Polkadot
-  const chainsMatch = chainflipChains.find(c => {
-    return c.chain.toLowerCase() === chain.uid.toLowerCase()
-  })
-
-  const assethub = chainflipChains.find(c => c.chain === 'Assethub')
-
-  // If no match is found, we default to Assethub as this is the only remaining chain supported
-  return chainsMatch ?? assethub
+  const registryChainName = chain.uid.split('-').at(-1)
+  return chainflipChains.find(c => c.chain.toLowerCase() === registryChainName?.toLowerCase())
 }
 
 /** Returns a Turtle Chain matching with Chainflip chain. */
@@ -314,17 +306,18 @@ export const isVaultSwapSupported = (sourceChain: ChainData, destChain: ChainDat
   sourceChain.chain !== 'Assethub' && destChain.chain !== 'Assethub'
 
 export const getFeeTokenFromAssetSymbol = (assetSymbol: AssetSymbol, chain: ChainflipChain): Token => {
-  if (chain === 'Ethereum') return EthereumTokens[assetSymbol]
-  if (chain === 'Arbitrum') return ArbitrumTokens[assetSymbol]
+  const registryTokens =
+    chain === 'Ethereum'
+      ? EthereumTokens
+      : chain === 'Arbitrum'
+        ? ArbitrumTokens
+        : chain === 'Assethub'
+          ? PolkadotTokens
+          : null
+  const token = registryTokens && Object.values(registryTokens).find(candidate => candidate.symbol === assetSymbol)
 
-  switch (assetSymbol) {
-    case 'USDC':
-      return PolkadotTokens.USDC
-    case 'USDT':
-      return PolkadotTokens.USDT
-    default:
-      return PolkadotTokens.DOT
-  }
+  if (!token) throw new Error(`No registry token found for Chainflip asset ${assetSymbol} on ${chain}`)
+  return token
 }
 
 export const getFeeLabelFromType = (feeType: ChainflipFeeType): FeeDetailType => {

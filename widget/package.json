@@ -28,7 +28,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@chainflip/sdk": "^1.10.0",
+    "@chainflip/sdk": "^2.3.1",
     "@hookform/resolvers": "4.1.2",
     "@number-flow/react": "^0.5.5",
     "@paraspell/sdk": "12.8.3",

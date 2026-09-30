@@ -19,9 +19,12 @@ vi.mock('@/utils/env', () => ({
 }))
 
 vi.mock('@/utils/paraspellTransfer', () => ({
-  getParaSpellChain: vi.fn((chain: { uid: string }) =>
-    chain.uid === 'polkadot-assethub' ? 'AssetHubPolkadot' : 'Hydration',
-  ),
+  getParaSpellChain: vi.fn((chain: { uid: string }) => {
+    if (chain.uid === 'polkadot-assethub') return 'AssetHubPolkadot'
+    if (chain.uid === 'ethereum') return 'Ethereum'
+    if (chain.uid === 'ethereum-testnet') return 'EthereumTestnet'
+    return 'Hydration'
+  }),
   getParaspellToken: vi.fn((token: { id: string }) => ({ symbol: token.id })),
 }))
 
@@ -101,5 +104,21 @@ describe('XcmRouterBuilderManager', () => {
     ])
 
     expect(RouterBuilderMock).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['ethereum', 'Ethereum'],
+    ['ethereum-testnet', 'EthereumTestnet'],
+  ])('allows %s as the destination of a ParaSpell swap', async (uid, paraSpellChain) => {
+    const manager = new XcmRouterBuilderManager()
+    const builder = createFakeBuilder()
+    RouterBuilderMock.mockReturnValue(builder)
+
+    await manager.createBuilder({
+      ...createParams(1n),
+      destinationChain: { uid },
+    } as never)
+
+    expect(builder.to).toHaveBeenCalledWith(paraSpellChain)
   })
 })

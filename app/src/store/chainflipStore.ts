@@ -20,7 +20,7 @@ export const useChainflipStore = create<ChainflipSdk>()((set, get) => ({
 
     const options = {
       network: 'mainnet',
-      enabledFeatures: { dca: true },
+      enabledFeatures: { dcaV2: true },
     } as SwapSDKOptions
 
     const swapSDK = new SwapSDK(options)
